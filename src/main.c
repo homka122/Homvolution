@@ -187,13 +187,13 @@ uint8_t *homv_apply_parallel_area(const uint8_t *image_input, int width, int hei
 	ssize_t mx_size = ((ssize_t)matrix_input.size);
 
 	ssize_t img_x, img_y, mx_x, mx_y, color;
-	ssize_t area_row_counts = (width + area_width - 1) / area_width;
-	ssize_t area_cols_counts = (height + area_height - 1) / area_height;
+	ssize_t area_row_counts = (height + area_height - 1) / area_height;	 // module with ceil
+	ssize_t area_col_counts = (width + area_width - 1) / area_width;
 	ssize_t area_index = 0;
 #pragma omp parallel for shared(output) private(area_index, img_x, img_y, mx_x, mx_y, color)
-	for (area_index = 0; area_index < area_row_counts * area_cols_counts; area_index++) {
-		ssize_t area_x = area_index % area_cols_counts;
-		ssize_t area_y = area_index / area_row_counts;
+	for (area_index = 0; area_index < area_row_counts * area_col_counts; area_index++) {
+		ssize_t area_x = area_index % area_col_counts;
+		ssize_t area_y = area_index / area_col_counts;
 		for (img_y = area_y * area_height; img_y < (area_y + 1) * area_height && img_y < height; img_y++) {
 			for (img_x = area_x * area_width; img_x < (area_x + 1) * area_width && img_x < width; img_x++) {
 				for (mx_x = 0; mx_x < mx_size; mx_x++) {
@@ -289,8 +289,8 @@ int main(int argc, char **argv) {
 		method = homv_apply_parallel_pixels;
 	} else if (strncmp(parallel_mode, "area", 4) == 0) {
 		strtok(parallel_mode, "_");
-		area_height = atoi(strtok(NULL, "_"));
 		area_width = atoi(strtok(NULL, "_"));
+		area_height = atoi(strtok(NULL, "_"));
 		method = homv_apply_parallel_area;
 	} else {
 		fprintf(stderr, "Unknown mode: %s\n", parallel_mode);
