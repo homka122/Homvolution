@@ -223,7 +223,9 @@ uint8_t *homv_reflect_image(uint8_t *old_image, int width, int height, int chann
 		return NULL;
 	}
 
-	uint8_t *new_image = malloc((width + (kernel_size - 1)) * (height + (kernel_size - 1)) * channels * sizeof(uint8_t));
+	ssize_t new_width = (ssize_t)(width + (kernel_size - 1));
+	ssize_t new_heigth = (ssize_t)(height + (kernel_size - 1));
+	uint8_t *new_image = malloc(new_width * new_heigth * channels * sizeof(uint8_t));
 
 	// idea is reflect index
 	// if we have image 2x2:
@@ -257,7 +259,7 @@ uint8_t *homv_reflect_image(uint8_t *old_image, int width, int height, int chann
 					reflected_row = 2 * height - row - 2;
 				}
 
-				new_image[(row + kernel_size / 2) * width * channels + (col + kernel_size / 2) * channels + color] =
+				new_image[(row + kernel_size / 2) * new_width * channels + (col + kernel_size / 2) * channels + color] =
 						old_image[reflected_row * width * channels + reflected_col * channels + color];
 			}
 		}
