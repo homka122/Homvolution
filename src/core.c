@@ -203,3 +203,65 @@ uint8_t *homv_apply_parallel_area(const uint8_t *image_input, int width, int hei
 
 	return (uint8_t *)output;
 }
+
+// Resize image by reflecting edges of images
+// If we have image
+// [1 2 3]
+// [4 5 6]
+// [7 8 9]
+// And kernel by 3x3 we must resize image to 5x5 size
+// One option is use reflecting and get new image:
+// [5 4 5 6 5]
+// [2 1 2 3 2]
+// [5 4 5 6 5]
+// [8 7 8 9 8]
+// [5 4 5 6 5]
+// After that we can process image without checking borders
+uint8_t *homv_reflect_image(uint8_t *old_image, int width, int height, int channels, size_t kernel_size) {
+	if (kernel_size % 2 != 1) {
+		fprintf(stderr, "Kernel size must be odd number\n");
+		return NULL;
+	}
+
+	uint8_t *new_image = malloc((width + (kernel_size - 1)) * (height + (kernel_size - 1)) * channels * sizeof(uint8_t));
+
+	// idea is reflect index
+	// if we have image 2x2:
+	// [(0 0) (0 1)]
+	// [(1 0) (1 1)]
+	// After add 1-size padding we get image with there coordinates
+	// [(-1 -1) (-1 0) (-1 1) (-1 2)]
+	// [( 0 -1) ( 0 0) ( 0 1) ( 0 2)]
+	// [( 1 -1) ( 1 0) ( 1 1) ( 1 2)]
+	// [( 2 -1) ( 2 0) ( 2 1) ( 2 2)]
+	// if coordinate below zero we just multiply by -1 for reflected index (-1 -1) -> (1 1)
+	// if coordinate above max coordinate of initial image we must subtract double difference (2 2) -> (0 0)
+	for (ssize_t col = -(kernel_size / 2); col < (ssize_t)(width + (kernel_size / 2)); col++) {
+		for (ssize_t row = -(kernel_size / 2); row < (ssize_t)(height + kernel_size / 2); row++) {
+			for (ssize_t color = 0; color < channels; color++) {
+				ssize_t reflected_col;
+				if (col < 0) {
+					reflected_col = -col;
+				} else if (col < width) {
+					reflected_col = col;
+				} else {
+					reflected_col = 2 * width - col - 2;
+				}
+
+				ssize_t reflected_row;
+				if (row < 0) {
+					reflected_row = -row;
+				} else if (row < height) {
+					reflected_row = row;
+				} else {
+					reflected_row = 2 * height - row - 2;
+				}
+
+				new_image[(row + kernel_size / 2) * width * channels + (col + kernel_size / 2) * channels + color] =
+						old_image[reflected_row * width * channels + reflected_col * channels + color];
+			}
+		}
+	}
+
+	return new_image;
+}

@@ -37,4 +37,19 @@ extern ssize_t area_width;
 extern ssize_t area_height;
 homv_apply_type homv_apply_parallel_area;
 
+// Resize image by reflecting edges of images
+// If we have image
+// [1 2 3]
+// [4 5 6]
+// [7 8 9]
+// And kernel by 3x3 we must resize image to 5x5 size
+// One option is use reflecting and get new image:
+// [5 4 5 6 5]
+// [2 1 2 3 2]
+// [5 4 5 6 5]
+// [8 7 8 9 8]
+// [5 4 5 6 5]
+// After that we can process image without checking borders
+uint8_t *homv_reflect_image(uint8_t *old_image, int width, int height, int channels, size_t kernel_size);
+
 #endif
