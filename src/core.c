@@ -64,15 +64,15 @@ uint8_t *homv_apply_seq(const uint8_t *image_input, int width, int height, int c
 	ssize_t mx_size = ((ssize_t)matrix_input.size);
 	for (ssize_t img_x = 0; img_x < width; img_x++) {
 		for (ssize_t img_y = 0; img_y < height; img_y++) {
+			ssize_t input_img_x = img_x + mx_size / 2;
+			ssize_t input_img_y = img_y + mx_size / 2;
 			for (ssize_t mx_x = 0; mx_x < mx_size; mx_x++) {
 				for (ssize_t mx_y = 0; mx_y < mx_size; mx_y++) {
+					ssize_t mx_img_x = input_img_x + (mx_x - (mx_size / 2));
+					ssize_t mx_img_y = input_img_y + (mx_y - (mx_size / 2));
 					for (ssize_t color = 0; color < channels; color++) {
-						ssize_t mx_img_x = img_x + (mx_x - (mx_size / 2));
-						ssize_t mx_img_y = img_y + (mx_y - (mx_size / 2));
-						if (mx_img_x < 0 || mx_img_x >= width || mx_img_y < 0 || mx_img_y >= height) continue;
-
 						output[img_y * width * channels + img_x * channels + color] +=
-								image_input[mx_img_y * width * channels + (mx_img_x)*channels + color] *
+								image_input[mx_img_y * (width + mx_size - 1) * channels + mx_img_x * channels + color] *
 								matrix_input.values[mx_y * mx_size + mx_x];
 					}
 				}
@@ -92,15 +92,15 @@ uint8_t *homv_apply_parallel_rows(const uint8_t *image_input, int width, int hei
 #pragma omp parallel for shared(output) private(img_x, img_y, mx_x, mx_y, color)
 	for (img_y = 0; img_y < height; img_y++) {
 		for (img_x = 0; img_x < width; img_x++) {
+			ssize_t input_img_x = img_x + mx_size / 2;
+			ssize_t input_img_y = img_y + mx_size / 2;
 			for (mx_x = 0; mx_x < mx_size; mx_x++) {
 				for (mx_y = 0; mx_y < mx_size; mx_y++) {
+					ssize_t mx_img_x = input_img_x + (mx_x - (mx_size / 2));
+					ssize_t mx_img_y = input_img_y + (mx_y - (mx_size / 2));
 					for (color = 0; color < channels; color++) {
-						ssize_t mx_img_x = img_x + (mx_x - (mx_size / 2));
-						ssize_t mx_img_y = img_y + (mx_y - (mx_size / 2));
-						if (mx_img_x < 0 || mx_img_x >= width || mx_img_y < 0 || mx_img_y >= height) continue;
-
 						output[img_y * width * channels + img_x * channels + color] +=
-								image_input[mx_img_y * width * channels + (mx_img_x)*channels + color] *
+								image_input[mx_img_y * (width + mx_size - 1) * channels + mx_img_x * channels + color] *
 								matrix_input.values[mx_y * mx_size + mx_x];
 					}
 				}
@@ -120,15 +120,15 @@ uint8_t *homv_apply_parallel_cols(const uint8_t *image_input, int width, int hei
 #pragma omp parallel for shared(output) private(img_x, img_y, mx_x, mx_y, color)
 	for (img_x = 0; img_x < width; img_x++) {
 		for (img_y = 0; img_y < height; img_y++) {
+			ssize_t input_img_x = img_x + mx_size / 2;
+			ssize_t input_img_y = img_y + mx_size / 2;
 			for (mx_x = 0; mx_x < mx_size; mx_x++) {
 				for (mx_y = 0; mx_y < mx_size; mx_y++) {
+					ssize_t mx_img_x = input_img_x + (mx_x - (mx_size / 2));
+					ssize_t mx_img_y = input_img_y + (mx_y - (mx_size / 2));
 					for (color = 0; color < channels; color++) {
-						ssize_t mx_img_x = img_x + (mx_x - (mx_size / 2));
-						ssize_t mx_img_y = img_y + (mx_y - (mx_size / 2));
-						if (mx_img_x < 0 || mx_img_x >= width || mx_img_y < 0 || mx_img_y >= height) continue;
-
 						output[img_y * width * channels + img_x * channels + color] +=
-								image_input[mx_img_y * width * channels + (mx_img_x)*channels + color] *
+								image_input[mx_img_y * (width + mx_size - 1) * channels + mx_img_x * channels + color] *
 								matrix_input.values[mx_y * mx_size + mx_x];
 					}
 				}
@@ -147,18 +147,17 @@ uint8_t *homv_apply_parallel_pixels(const uint8_t *image_input, int width, int h
 	ssize_t pixel_id, mx_x, mx_y, color;
 #pragma omp parallel for shared(output) private(pixel_id, mx_x, mx_y, color)
 	for (pixel_id = 0; pixel_id < width * height; pixel_id++) {
+		ssize_t img_x = pixel_id % width;
+		ssize_t img_y = pixel_id / width;
+		ssize_t input_img_x = img_x + mx_size / 2;
+		ssize_t input_img_y = img_y + mx_size / 2;
 		for (mx_x = 0; mx_x < mx_size; mx_x++) {
 			for (mx_y = 0; mx_y < mx_size; mx_y++) {
+				ssize_t mx_img_x = input_img_x + (mx_x - (mx_size / 2));
+				ssize_t mx_img_y = input_img_y + (mx_y - (mx_size / 2));
 				for (color = 0; color < channels; color++) {
-					ssize_t img_x = pixel_id % width;
-					ssize_t img_y = pixel_id / width;
-
-					ssize_t mx_img_x = img_x + (mx_x - (mx_size / 2));
-					ssize_t mx_img_y = img_y + (mx_y - (mx_size / 2));
-					if (mx_img_x < 0 || mx_img_x >= width || mx_img_y < 0 || mx_img_y >= height) continue;
-
 					output[img_y * width * channels + img_x * channels + color] +=
-							image_input[mx_img_y * width * channels + (mx_img_x)*channels + color] *
+							image_input[mx_img_y * (width + mx_size - 1) * channels + mx_img_x * channels + color] *
 							matrix_input.values[mx_y * mx_size + mx_x];
 				}
 			}
@@ -184,15 +183,15 @@ uint8_t *homv_apply_parallel_area(const uint8_t *image_input, int width, int hei
 		ssize_t area_y = area_index / area_col_counts;
 		for (img_y = area_y * area_height; img_y < (area_y + 1) * area_height && img_y < height; img_y++) {
 			for (img_x = area_x * area_width; img_x < (area_x + 1) * area_width && img_x < width; img_x++) {
+				ssize_t input_img_x = img_x + mx_size / 2;
+				ssize_t input_img_y = img_y + mx_size / 2;
 				for (mx_x = 0; mx_x < mx_size; mx_x++) {
 					for (mx_y = 0; mx_y < mx_size; mx_y++) {
+						ssize_t mx_img_x = input_img_x + (mx_x - (mx_size / 2));
+						ssize_t mx_img_y = input_img_y + (mx_y - (mx_size / 2));
 						for (color = 0; color < channels; color++) {
-							ssize_t mx_img_x = img_x + (mx_x - (mx_size / 2));
-							ssize_t mx_img_y = img_y + (mx_y - (mx_size / 2));
-							if (mx_img_x < 0 || mx_img_x >= width || mx_img_y < 0 || mx_img_y >= height) continue;
-
 							output[img_y * width * channels + img_x * channels + color] +=
-									image_input[mx_img_y * width * channels + (mx_img_x)*channels + color] *
+									image_input[mx_img_y * (width + mx_size - 1) * channels + mx_img_x * channels + color] *
 									matrix_input.values[mx_y * mx_size + mx_x];
 						}
 					}

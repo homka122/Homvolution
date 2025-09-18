@@ -115,7 +115,7 @@ int main(int argc, char **argv) {
 	} else if (strcmp(chosen_matrix, "outline") == 0) {
 		matrix = homv_matrices[HOMV_MATRIX_OUTLINE];
 	} else if (strcmp(chosen_matrix, "random") == 0) {
-		matrix = *homv_mx_get_random_matrix(3);
+		matrix = *homv_mx_get_random_matrix(9);
 	} else {
 		fprintf(stderr, "Unknown matrix: %s\n", chosen_matrix);
 		return 1;
@@ -139,7 +139,8 @@ int main(int argc, char **argv) {
 		double start;
 		double end;
 		start = omp_get_wtime();
-		uint8_t *output = method(img, width, height, channels, matrix);
+		uint8_t *image_reflected = homv_reflect_image(img, width, height, channels, matrix.size);
+		uint8_t *output = method(image_reflected, width, height, channels, matrix);
 		end = omp_get_wtime();
 		printf("Work took %f seconds\n", end - start);
 		// uint8_t *output = img;
