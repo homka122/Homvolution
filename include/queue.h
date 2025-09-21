@@ -1,13 +1,13 @@
 #include <stdlib.h>
 
 typedef struct node_t {
-	struct node_t *next;
-	void *value;
+  struct node_t *next;
+  void *value;
 } node_t;
 
 typedef struct {
-	node_t *head;
-	size_t size;
+  node_t *head;
+  size_t size;
 } queue_t;
 
 queue_t *queue_init();

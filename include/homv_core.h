@@ -12,12 +12,12 @@ extern double matrix_outline[];
 // clang-format on
 
 enum {
-	HOMV_MATRIX_SHARPEN = 0,
-	HOMV_MATRIX_BLUR,
-	HOMV_MATRIX_IDENTITY,
-	HOMV_MATRIX_BOTTOM_SOBEL,
-	HOMV_MATRIX_OUTLINE,
-	HOMV_MATRIX_MAX
+  HOMV_MATRIX_SHARPEN = 0,
+  HOMV_MATRIX_BLUR,
+  HOMV_MATRIX_IDENTITY,
+  HOMV_MATRIX_BOTTOM_SOBEL,
+  HOMV_MATRIX_OUTLINE,
+  HOMV_MATRIX_MAX
 };
 
 extern homv_matrix homv_matrices[HOMV_MATRIX_MAX];
@@ -27,7 +27,7 @@ extern char *filenames[FILE_NAMES_MAX_COUNT];
 extern size_t filenames_count;
 
 typedef uint8_t *(homv_apply_type)(const uint8_t *image_input, int width, int height, int channels,
-																	 homv_matrix matrix_input);
+                                   homv_matrix matrix_input);
 
 homv_apply_type homv_apply_seq;
 homv_apply_type homv_apply_parallel_rows;
@@ -37,7 +37,7 @@ extern ssize_t area_width;
 extern ssize_t area_height;
 homv_apply_type homv_apply_parallel_area;
 void queue_exec(char *filenames[FILE_NAMES_MAX_COUNT], size_t filenames_count, homv_apply_type method_input,
-								homv_matrix matrix_input);
+                homv_matrix matrix_input);
 
 // Resize image by reflecting edges of images
 // If we have image
