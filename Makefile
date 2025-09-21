@@ -15,5 +15,11 @@ build/queue.o: src/queue.c
 build-cli: build/cli.o build/homv_matrix.o build/core.o build/queue.o
 	gcc -Wall -Wpedantic -Wextra build/core.o build/cli.o build/homv_matrix.o build/queue.o -fopenmp -lm -pthread -I./deps -I./include -g -o build/app
 
+tests: build-cli
+	gcc src/core.c src/homv_matrix.c src/queue.c tests/test_methods.c  -I./include -I./deps -lm -g -o build/test_methods -lcmocka
+	gcc src/queue.c tests/test_queue.c -I./include -lm -g -o build/test_queue -lcmocka
+	build/test_methods
+	build/test_queue
+
 run: build
 	./build/app -p seq -m sharpen input/example.jpg && code output/output_example.jpg
