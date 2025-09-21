@@ -21,7 +21,22 @@ extern ssize_t area_height;
 extern char *filenames[FILE_NAMES_MAX_COUNT];
 extern size_t filenames_count;
 
-void print_help_message(char **argv) { printf("Usage: %s -p [seq] -m [blur | sharpen | random] ...files\n", argv[0]); }
+void print_help_message(char **argv) {
+  printf("Usage: %s -p [seq | rows | cols | pixels | area_W_H] -m [blur | sharpen | identity | bottom_sobel | outline "
+         "| random] [-q] ...files\n"
+         "-   `-p` --- parallelization strategy:\n"
+         "    -   `seq` --- sequential mode.\n"
+         "    -   `rows` --- parallel by rows.\n"
+         "    -   `cols` --- parallel by columns.\n"
+         "    -   `pixels` --- parallel by individual pixels.\n"
+         "    -   `area_W_H` --- splits image into blocks (width W, height H).\n"
+         "        Example: `area_64_64`.\n"
+         "-   `-m` --- convolution matrix:\n"
+         "    -   `sharpen`, `blur`, `identity`, `bottom_sobel`, `outline`, `random`.\n"
+         "    -   `random` generates a fixed **9×9** matrix in current implementation.\n"
+         "-   `-q` --- enable queue (pipeline) mode. Processing is done via reader/worker/writer threads.\n",
+         argv[0]);
+}
 
 int process_command_line(int argc, char **argv, char **parallel_mode, char **chosen_matrix, bool *q_flag) {
   extern char *optarg;
@@ -33,7 +48,7 @@ int process_command_line(int argc, char **argv, char **parallel_mode, char **cho
     switch (opt) {
     case 'h':
       print_help_message(argv);
-      return 0;
+      exit(0);
     case 'p':
       p_flag++;
       *parallel_mode = optarg;
