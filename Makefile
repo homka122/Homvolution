@@ -20,8 +20,17 @@ $(BUILD)/cli.o: $(SRC)/cli.c $(INCLUDE)/homv_matrix.h $(INCLUDE)/homv_core.h
 $(BUILD)/queue.o: $(SRC)/queue.c
 	gcc $(CFLAGS) -c $< -o $@
 
+$(BUILD)/benchmark.o: $(SRC)/benchmark.c
+	gcc $(CFLAGS) -c $< -o $@
+
 build-cli: $(BUILD)/cli.o $(BUILD)/homv_matrix.o $(BUILD)/core.o $(BUILD)/queue.o
-	gcc $(CFLAGS) $(BUILD)/core.o $(BUILD)/cli.o $(BUILD)/homv_matrix.o $(BUILD)/queue.o $(LDFLAGS) -o $(BUILD)/app
+	gcc $(CFLAGS) $^ $(LDFLAGS) -o $(BUILD)/app
+
+build-benchmark: $(BUILD)/homv_matrix.o $(BUILD)/core.o $(BUILD)/queue.o $(BUILD)/benchmark.o
+	gcc $(CFLAGS) $^ $(LDFLAGS) -o $(BUILD)/bench
+
+bench: build-benchmark
+	$(BUILD)/bench outline input/limons.jpg
 
 tests: build-cli
 	gcc $(SRC)/core.c $(SRC)/homv_matrix.c $(SRC)/queue.c tests/test_methods.c $(CFLAGS) $(LDFLAGS) -o $(BUILD)/test_methods $(TEST_FRAMEWORK)
