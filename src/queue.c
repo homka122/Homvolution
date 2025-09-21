@@ -1,14 +1,6 @@
+#include "queue.h"
+
 #include <stdlib.h>
-
-typedef struct node_t {
-	struct node_t *next;
-	void *value;
-} node_t;
-
-typedef struct {
-	node_t *head;
-	size_t size;
-} queue_t;
 
 queue_t *queue_init() {
 	queue_t *queue = malloc(sizeof(queue_t));
@@ -30,14 +22,10 @@ void queue_add(queue_t *queue, void *data) {
 		return;
 	}
 
-	node_t *cur = queue->head;
-	while (cur->next) {
-		cur = cur->next;
-	}
-
-	cur->next = node;
-	queue->head = cur;
+	node_t *head = queue->head;
+	queue->head = node;
 	queue->size++;
+	node->next = head;
 
 	return;
 }

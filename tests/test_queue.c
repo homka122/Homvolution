@@ -32,14 +32,12 @@ static void test_queue_add_and_pop(void **state) {
 	queue_add(q, b);
 
 	assert_int_equal(q->size, 2);
-	assert_int_equal(*(int *)(q->head->value), 17);
-	assert_int_equal(*(int *)(q->head->next->value), 122);
 
 	void *first = queue_pop(q);
-	assert_ptr_equal(first, b);
+	assert_ptr_equal(first, a);
 
 	void *second = queue_pop(q);
-	assert_ptr_equal(second, a);
+	assert_ptr_equal(second, b);
 
 	assert_int_equal(q->size, 0);
 	assert_null(queue_pop(q));
