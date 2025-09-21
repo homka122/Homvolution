@@ -108,6 +108,13 @@ make tests
 ![](benchmark/results2.png)
 ![](benchmark/results3.png)
 
+### Conclusion
+
+-   Parallel method allow speed up image proccesing up to 5x on my CPU on big image.
+-   On small images, the performance gain decreases because of the extra overhead introduced by parallelism.
+-   Parallelization by rows typically yields the highest speedup, while cols provides the least.
+-   However, the differences between the parallelization strategies are generally minor.
+
 ## Input / Output
 
 -   Input: any image format supported by `stb_image` (jpg, png, ...).
