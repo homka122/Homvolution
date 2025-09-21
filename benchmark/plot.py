@@ -4,7 +4,7 @@ import numpy as np
 methods = []
 data = []
 
-filename = "results3"
+filename = "results1"
 
 with open(filename + ".csv") as f:
     for line in f:
