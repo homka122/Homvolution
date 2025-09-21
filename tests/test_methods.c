@@ -47,7 +47,7 @@ static void test_rows_method(void **state) {
 
 	APPLY_METHOD(homv_apply_parallel_rows);
 
-	for (size_t i = 0; i < width * height * channels; i++) {
+	for (ssize_t i = 0; i < width * height * channels; i++) {
 		assert_int_equal(first_output[i], second_output[i]);
 	}
 
@@ -61,7 +61,7 @@ static void test_cols_method(void **state) {
 
 	APPLY_METHOD(homv_apply_parallel_cols);
 
-	for (size_t i = 0; i < width * height * channels; i++) {
+	for (ssize_t i = 0; i < width * height * channels; i++) {
 		assert_int_equal(first_output[i], second_output[i]);
 	}
 
@@ -75,7 +75,7 @@ static void test_pixels_method(void **state) {
 
 	APPLY_METHOD(homv_apply_parallel_pixels);
 
-	for (size_t i = 0; i < width * height * channels; i++) {
+	for (ssize_t i = 0; i < width * height * channels; i++) {
 		assert_int_equal(first_output[i], second_output[i]);
 	}
 
@@ -94,7 +94,7 @@ static void test_area_method(void **state) {
 
 	APPLY_METHOD(homv_apply_parallel_area);
 
-	for (size_t i = 0; i < width * height * channels; i++) {
+	for (ssize_t i = 0; i < width * height * channels; i++) {
 		assert_int_equal(first_output[i], second_output[i]);
 	}
 
