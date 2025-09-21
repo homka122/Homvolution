@@ -17,7 +17,7 @@ jobs:
             - name: Install dependencies
               run: |
                   sudo apt update
-                  sudo apt install -y gcc clang cmocka cmake make
+                  sudo apt install -y gcc clang libcmocka-dev cmake make
 
             - name: Set up build directory
               run: mkdir -p build
