@@ -24,7 +24,7 @@ jobs:
 
             - name: Check formatting
               run: |
-                  make clang-format
+                  make format-check
 
             - name: Build project
               run: |
