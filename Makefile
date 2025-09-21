@@ -1,25 +1,33 @@
-all: build
+SRC = src
+INCLUDE = include
+BUILD = build
+DEPS = deps
 
-build/homv_matrix.o: src/homv_matrix.c include/homv_matrix.h include/homv_core.h
-	gcc -Wall -Wpedantic -Wextra -c src/homv_matrix.c -I./deps -I./include -g -o build/homv_matrix.o
+CFLAGS = -Wall -Wpedantic -Wextra -I$(INCLUDE) -I$(DEPS) -g -fopenmp
+LDFLAGS = -lm -pthread
 
-build/cli.o: src/cli.c include/homv_matrix.h include/homv_core.h
-	gcc -Wall -Wpedantic -Wextra -c src/cli.c -I./deps -fopenmp -I./include -g -o build/cli.o
+TEST_FRAMEWORK = -lcmocka
 
-build/core.o: src/core.c include/homv_matrix.h include/homv_core.h
-	gcc -Wall -Wpedantic -Wextra -c src/core.c -I./deps -fopenmp -I./include -g -o build/core.o
+$(BUILD)/homv_matrix.o: $(SRC)/homv_matrix.c $(INCLUDE)/homv_matrix.h $(INCLUDE)/homv_core.h
+	gcc $(CFLAGS) -c $< -o $@
 
-build/queue.o: src/queue.c
-	gcc -Wall -Wpedantic -Wextra -c src/queue.c -I./deps -fopenmp -I./include -g -o build/queue.o
+$(BUILD)/core.o: $(SRC)/core.c $(INCLUDE)/homv_matrix.h $(INCLUDE)/homv_core.h
+	gcc $(CFLAGS) -c $< -o $@
 
-build-cli: build/cli.o build/homv_matrix.o build/core.o build/queue.o
-	gcc -Wall -Wpedantic -Wextra build/core.o build/cli.o build/homv_matrix.o build/queue.o -fopenmp -lm -pthread -I./deps -I./include -g -o build/app
+$(BUILD)/cli.o: $(SRC)/cli.c $(INCLUDE)/homv_matrix.h $(INCLUDE)/homv_core.h
+	gcc $(CFLAGS) -c $< -o $@
+
+$(BUILD)/queue.o: $(SRC)/queue.c
+	gcc $(CFLAGS) -c $< -o $@
+
+build-cli: $(BUILD)/cli.o $(BUILD)/homv_matrix.o $(BUILD)/core.o $(BUILD)/queue.o
+	gcc $(CFLAGS) $(BUILD)/core.o $(BUILD)/cli.o $(BUILD)/homv_matrix.o $(BUILD)/queue.o $(LDFLAGS) -o $(BUILD)/app
 
 tests: build-cli
-	gcc src/core.c src/homv_matrix.c src/queue.c tests/test_methods.c  -I./include -I./deps -lm -g -o build/test_methods -lcmocka
-	gcc src/queue.c tests/test_queue.c -I./include -lm -g -o build/test_queue -lcmocka
-	build/test_methods
-	build/test_queue
+	gcc $(SRC)/core.c $(SRC)/homv_matrix.c $(SRC)/queue.c tests/test_methods.c $(CFLAGS) $(LDFLAGS) -o $(BUILD)/test_methods $(TEST_FRAMEWORK)
+	gcc $(SRC)/queue.c tests/test_queue.c $(CFLAGS) -o $(BUILD)/test_queue $(TEST_FRAMEWORK)
+	$(BUILD)/test_methods
+	$(BUILD)/test_queue
 
-run: build
-	./build/app -p seq -m sharpen input/example.jpg && code output/output_example.jpg
+format-check:
+	clang-format --dry-run --Werror $(SRC)/*.c $(INCLUDE)/*.h
