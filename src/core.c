@@ -2,13 +2,17 @@
 #include <homv_matrix.h>
 #include <libgen.h>
 #include <omp.h>
+#include <pthread.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <sys/types.h>
 #include <time.h>
 #include <unistd.h>
 
 #include "homv_core.h"
+#include "queue.h"
 #include "stb_image.h"
 #include "stb_image_write.h"
 
@@ -265,4 +269,177 @@ uint8_t *homv_reflect_image(uint8_t *old_image, int width, int height, int chann
 	}
 
 	return new_image;
+}
+
+#define READERS_COUNT 3
+#define WORKERS_COUNT 6
+#define WRITERS_COUNT 3
+
+pthread_mutex_t queue_mutex;
+pthread_t readers[READERS_COUNT], workers[WORKERS_COUNT], writers[WRITERS_COUNT];
+queue_t *queue_readers;
+queue_t *queue_workers;
+queue_t *queue_writers;
+homv_apply_type *method;
+homv_matrix matrix;
+size_t read_count, work_count;
+bool read_ready = false, write_ready = false;
+
+typedef struct {
+	uint8_t *image;
+	char *filename;
+	int width;
+	int height;
+	int channels;
+} node_image_data;
+
+void *thread_func_reader(void *params_input) {
+	(void)params_input;
+
+	while (1) {
+		pthread_mutex_lock(&queue_mutex);
+		if (queue_readers->size == 0) {
+			pthread_mutex_unlock(&queue_mutex);
+			return NULL;
+		}
+		char *filename = queue_pop(queue_readers);
+		pthread_mutex_unlock(&queue_mutex);
+
+		int width, height, channels;
+		uint8_t *img = stbi_load(filename, &width, &height, &channels, 0);
+
+		if (!img) {
+			printf("Failed to load image: %s\n", filename);
+			return NULL;
+		}
+
+		printf("Loaded image: %dx%d, Channels: %d\n", width, height, channels);
+
+		node_image_data *data = malloc(sizeof(node_image_data));
+		data->image = img;
+		data->filename = filename;
+		data->width = width;
+		data->height = height;
+		data->channels = channels;
+		pthread_mutex_lock(&queue_mutex);
+		queue_add(queue_workers, (void *)data);
+		if (queue_readers->size == 0) {
+			read_ready = true;
+		}
+		pthread_mutex_unlock(&queue_mutex);
+	}
+}
+
+void *thread_func_worker(void *params_input) {
+	(void)params_input;
+
+	while (1) {
+		pthread_mutex_lock(&queue_mutex);
+		if (queue_workers->size == 0) {
+			if (queue_readers->size == 0 && read_ready) {
+				pthread_mutex_unlock(&queue_mutex);
+				return NULL;
+			}
+
+			pthread_mutex_unlock(&queue_mutex);
+			continue;
+		}
+		node_image_data *data = queue_pop(queue_workers);
+		pthread_mutex_unlock(&queue_mutex);
+
+		uint8_t *image_reflected = homv_reflect_image(data->image, data->width, data->height, data->channels, matrix.size);
+		uint8_t *output = method(image_reflected, data->width, data->height, data->channels, matrix);
+		printf("Convolution applied to %s\n", data->filename);
+
+		data->image = output;
+		pthread_mutex_lock(&queue_mutex);
+		queue_add(queue_writers, (void *)data);
+		if (queue_workers->size == 0) {
+			write_ready = true;
+		}
+		pthread_mutex_unlock(&queue_mutex);
+	}
+}
+
+void *thread_func_writer(void *params_input) {
+	(void)params_input;
+
+	while (1) {
+		pthread_mutex_lock(&queue_mutex);
+		// printf("%ld %ld %ld\n", queue_readers->size, queue_workers->size, queue_writers->size);
+		if (queue_writers->size == 0) {
+			if (queue_readers->size == 0 && queue_workers->size == 0 && read_ready && write_ready) {
+				pthread_mutex_unlock(&queue_mutex);
+				return NULL;
+			}
+
+			pthread_mutex_unlock(&queue_mutex);
+			continue;
+		}
+		node_image_data *data = queue_pop(queue_writers);
+		pthread_mutex_unlock(&queue_mutex);
+
+		char *filename = basename(data->filename);
+		char *newfilename = malloc(sizeof(char) * (strlen(filename) + strlen("output/output_") + 1));
+
+		newfilename[0] = '\0';
+		strcat(newfilename, "output/output_");
+		strcat(newfilename, filename);
+
+		if (stbi_write_jpg(newfilename, data->width, data->height, data->channels, data->image, 100)) {
+			printf("Image saved as %s\n", newfilename);
+		} else {
+			printf("Failed to save image\n");
+			printf("%s, %d, %d, %d", newfilename, data->width, data->height, data->channels);
+		}
+	}
+}
+
+void queue_exec(char *filenames[FILE_NAMES_MAX_COUNT], size_t filenames_count, homv_apply_type method_input,
+								homv_matrix matrix_input) {
+	method = method_input;
+	matrix = matrix_input;
+	read_count = filenames_count;
+	work_count = 0;
+
+	pthread_mutex_init(&queue_mutex, NULL);
+
+	queue_readers = queue_init();
+	queue_workers = queue_init();
+	queue_writers = queue_init();
+
+	for (size_t i = 0; i < filenames_count; i++) {
+		queue_add(queue_readers, (void *)filenames[i]);
+	}
+
+	for (size_t i = 0; i < READERS_COUNT; i++) {
+		pthread_create(&readers[i], NULL, thread_func_reader, NULL);
+	}
+	for (size_t i = 0; i < WORKERS_COUNT; i++) {
+		pthread_create(&workers[i], NULL, thread_func_worker, NULL);
+	}
+	for (size_t i = 0; i < WRITERS_COUNT; i++) {
+		pthread_create(&writers[i], NULL, thread_func_writer, NULL);
+	}
+
+	for (size_t i = 0; i < READERS_COUNT; i++) {
+		void *result;
+		pthread_join(readers[i], &result);
+	}
+
+	for (size_t i = 0; i < WORKERS_COUNT; i++) {
+		void *result;
+		pthread_join(workers[i], &result);
+	}
+
+	for (size_t i = 0; i < WRITERS_COUNT; i++) {
+		void *result;
+		pthread_join(writers[i], &result);
+	}
+
+	queue_free(queue_readers);
+	queue_free(queue_workers);
+	queue_free(queue_writers);
+
+	return;
 }

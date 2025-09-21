@@ -36,6 +36,8 @@ homv_apply_type homv_apply_parallel_pixels;
 extern ssize_t area_width;
 extern ssize_t area_height;
 homv_apply_type homv_apply_parallel_area;
+void queue_exec(char *filenames[FILE_NAMES_MAX_COUNT], size_t filenames_count, homv_apply_type method_input,
+								homv_matrix matrix_input);
 
 // Resize image by reflecting edges of images
 // If we have image

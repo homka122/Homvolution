@@ -3,6 +3,7 @@
 #include <ctype.h>
 #include <libgen.h>
 #include <omp.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/types.h>
@@ -22,13 +23,13 @@ extern size_t filenames_count;
 
 void print_help_message(char **argv) { printf("Usage: %s -p [seq] -m [blur | sharpen | random] ...files\n", argv[0]); }
 
-int process_command_line(int argc, char **argv, char **parallel_mode, char **chosen_matrix) {
+int process_command_line(int argc, char **argv, char **parallel_mode, char **chosen_matrix, bool *q_flag) {
 	extern char *optarg;
 	extern int optind, opterr, optopt;
 
 	int p_flag = 0, m_flag = 0, err_flag = 0;
 	int opt = -1;
-	while ((opt = getopt(argc, argv, ":p:m:h")) != -1) {
+	while ((opt = getopt(argc, argv, ":p:m:hq")) != -1) {
 		switch (opt) {
 			case 'h':
 				print_help_message(argv);
@@ -40,6 +41,9 @@ int process_command_line(int argc, char **argv, char **parallel_mode, char **cho
 			case 'm':
 				m_flag++;
 				*chosen_matrix = optarg;
+				break;
+			case 'q':
+				*q_flag = true;
 				break;
 			case ':': /* -p or -m without operand */
 				fprintf(stderr, "Option -%c requires an operand\n", optopt);
@@ -74,7 +78,8 @@ int main(int argc, char **argv) {
 	srand(time(NULL));
 	char *parallel_mode = NULL;
 	char *chosen_matrix = NULL;
-	if (process_command_line(argc, argv, &parallel_mode, &chosen_matrix)) {
+	bool q_flag = false;
+	if (process_command_line(argc, argv, &parallel_mode, &chosen_matrix, &q_flag)) {
 		return 1;
 	}
 
@@ -121,6 +126,11 @@ int main(int argc, char **argv) {
 		return 1;
 	}
 	printf("Chosen matrix: [%s]\n", chosen_matrix);
+
+	if (q_flag) {
+		queue_exec(filenames, filenames_count, method, matrix);
+		return 0;
+	}
 
 	for (size_t filename_i = 0; filename_i < filenames_count; filename_i++) {
 		char *filepath = filenames[filename_i];
