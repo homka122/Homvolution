@@ -108,12 +108,19 @@ make tests
 ![](benchmark/results2.png)
 ![](benchmark/results3.png)
 
+### Results (4 images Pipeline, input/chr.jpg * 4)
+![](benchmark/results4.png)
+
+**Note:** When using the queue (-q) mode, performance can continue to improve as the number of input images increases — up to a certain upper limit.
+
+
 ### Conclusion
 
 -   Parallel method allow speed up image proccesing up to 5x on my CPU on big image.
 -   On small images, the performance gain decreases because of the extra overhead introduced by parallelism.
 -   Parallelization by rows typically yields the highest speedup, while cols provides the least.
 -   However, the differences between the parallelization strategies are generally minor.
+-   Pipeline mode (-q) allows significant speedup of the whole system when many files are processed at once.
 
 ## Input / Output
 
